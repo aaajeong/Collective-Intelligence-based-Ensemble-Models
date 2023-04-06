@@ -1,0 +1,24 @@
+=====5000=====
+mnist: 60000
+emnist: 0
+cifar10: 2512
+cifar100: 2488
+imagenet: 0
+
+
+=====5000=====
+mnist: 60000
+emnist: 0
+cifar10: 2499
+cifar100: 2501
+imagenet: 0
+
+
+=====5000=====
+mnist: 60000
+emnist: 0
+cifar10: 2498
+cifar100: 2502
+imagenet: 0
+
+
