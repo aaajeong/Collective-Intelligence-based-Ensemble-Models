@@ -30,25 +30,15 @@ def getEntropyBasedUncertainty(data, n_class):
     return uncertainty
 
 
-def choiceRandom(main_dataset, k, unknown, n_class):
+def choiceRandom(k, unknown):
     """
-    main_dataset: mnist or cifar10
     k:unknown dataset 개수 설정한 값
     unknown: unknown 데이터(<class 'customDataset.custom_wholeset'>)
     n_class: unknown 클래스 번호
     """
     
     # k 만큼 분리
-    chosen_data, _ = random_split(unknown, [k, len(unknown)-k]) #<class 'torch.utils.data.dataset.Subset'>
-    
-
-    # labels 전체 unknown class로 처리
-    for i in range(k):
-        unknown.targets[i] = n_class
-    
-    # check
-    # checkData(main_dataset,'Random',[i for i in idx_rand])
+    # <torch.utils.data.dataset.Subset object at 0x7fba227f4610>
+    chosen_data, _ = random_split(unknown, [k, len(unknown)-k])
 
     return chosen_data
-    
-    # 커스텀데이트 클래스 만들고 unknown 클래스로 바꾸는 작업 하고 있었음

@@ -15,7 +15,7 @@ import os
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'{device} is available.')
 
-def trainModel(dataset, n_class, selection, epochs, batch_size):
+def trainModel(epochs, batch_size):
     # 전처리 진행
     
     transform_1ch = transforms.Compose(
@@ -33,12 +33,7 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
 
-    # transform_3chn = transforms.Compose(
-    #     [transforms.Grayscale(3),   # 1채널 -> 3채널
-    #      transforms.ToTensor(), # 텐서로 바꿔주고([-1,1])
-    #      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]) # 3개의 채널에 대한 평균, 표준편차를 넣어준다.(정규화)(값은 최적화 값은 아님)
-    
-    
+ 
     trainset = torchvision.datasets.MNIST(root='../data', train=True,
                                                 download=True, transform=transform_1ch2)
     testset = torchvision.datasets.MNIST(root='../data', train=False,
@@ -52,23 +47,21 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
     trainset3 = torchvision.datasets.CIFAR100(root='../data', train=True,
                                                 download=True, transform=transform_3ch)
 
+
+    # final_trainset = torch.utils.data.ConcatDataset([trainset, trainset2])
     
     # Unown class
     unknown_list = prepareData.labelTounknown([trainset, trainset], 11)
     final_unknown = torch.utils.data.ConcatDataset(unknown_list)
-
-
-    num = 5000
-
-    final_trainset = prepareData.unknownClassData('mnist', trainset2, n_class, final_unknown, num, selection)
+    
+    unknown = prepareData.choiceUnknown('mnist', final_unknown, 5000, 'random', 11)
     
     # DataLoader
-    final_trainloader = torch.utils.data.DataLoader(final_trainset, batch_size, shuffle=True) 
-    
+    final_trainloader = torch.utils.data.DataLoader(unknown, batch_size, shuffle=True)
 
     
     # Train Model
-    model = Models.Net2().to(device)
+    model = Models.Net3().to(device)
     
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -101,8 +94,8 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
     print('Finished Training')
     
     # Save Model
-    if not os.path.isdir('../model/test'):
-        os.mkdir('../model/test')
-    torch.save(model, '../model/test/'+dataset+'_dataselection_'+selection+'.h5')
+    # if not os.path.isdir('../model/test'):
+    #     os.mkdir('../model/test')
+    # torch.save(model, '../model/test/'+dataset+'_dataselection_'+selection+'.h5')
     
-trainModel('mnist', 11, 'random', 100, 128)
+trainModel(100, 128)
