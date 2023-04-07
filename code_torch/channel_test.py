@@ -54,21 +54,25 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
 
     
     # Unown class
-    unknown_list = prepareData.labelTounknown([trainset, trainset], 11)
+    unknown_list = prepareData.labelTounknown([trainset2, trainset3], n_class)
     final_unknown = torch.utils.data.ConcatDataset(unknown_list)
 
 
     num = 5000
 
-    final_trainset = prepareData.unknownClassData('mnist', trainset2, n_class, final_unknown, num, selection)
+    final_trainset = prepareData.unknownClassData('mnist', trainset, n_class, final_unknown, num, selection)
     
     # DataLoader
     final_trainloader = torch.utils.data.DataLoader(final_trainset, batch_size, shuffle=True) 
     
-
+    # 제대로 불러왔는지 확인
+    # dataiter = iter(final_trainloader)
+    # inputs, labels = next(dataiter)
+    # print(inputs)
+    # print(labels)
     
     # Train Model
-    model = Models.Net2().to(device)
+    model = Models.Net3(n_class).to(device)
     
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -105,4 +109,4 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
         os.mkdir('../model/test')
     torch.save(model, '../model/test/'+dataset+'_dataselection_'+selection+'.h5')
     
-trainModel('mnist', 11, 'random', 100, 128)
+trainModel('mnist', 10, 'random', 100, 128)

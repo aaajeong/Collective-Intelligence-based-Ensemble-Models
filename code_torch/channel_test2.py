@@ -51,14 +51,19 @@ def trainModel(epochs, batch_size):
     # final_trainset = torch.utils.data.ConcatDataset([trainset, trainset2])
     
     # Unown class
-    unknown_list = prepareData.labelTounknown([trainset, trainset], 11)
+    unknown_list = prepareData.labelTounknown([trainset], 10)
     final_unknown = torch.utils.data.ConcatDataset(unknown_list)
     
-    unknown = prepareData.choiceUnknown('mnist', final_unknown, 5000, 'random', 11)
+    unknown = prepareData.choiceUnknown('mnist', final_unknown, 5000, 'random', 10)
     
     # DataLoader
-    final_trainloader = torch.utils.data.DataLoader(unknown, batch_size, shuffle=True)
+    unknown_trainloader = torch.utils.data.DataLoader(unknown, batch_size, shuffle=True)
+    # train_trainloader = torch.utils.data.DataLoader(trainset, batch_size, shuffle=True)
 
+    dataiter = iter(unknown_trainloader)
+    inputs, labels = next(dataiter)
+    print(inputs)
+    print(labels)
     
     # Train Model
     model = Models.Net3().to(device)
@@ -67,12 +72,12 @@ def trainModel(epochs, batch_size):
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     
     loss_ = [] # 그래프를 그리기 위한 loss 저장용 리스트 
-    n = len(final_trainloader) # 배치 개수
+    n = len(unknown_trainloader) # 배치 개수
 
     for epoch in range(epochs):  # 10번 학습을 진행한다.
 
         running_loss = 0.0
-        for i, data in enumerate(final_trainloader, 0):
+        for i, data in enumerate(unknown_trainloader, 0):
 
             # gpu용 데이터와 모델이 있어야 함. (to(device)를 해줘야 한다.)
             inputs, labels = data[0].to(device), data[1].to(device) # 배치 데이터 
@@ -89,9 +94,9 @@ def trainModel(epochs, batch_size):
             running_loss += loss.item()
 
         loss_.append(running_loss / n)    
-        print('[%d] loss: %.3f' %(epoch + 1, running_loss / len(final_trainloader)))
+        print('[%d] loss: %.3f' %(epoch + 1, running_loss / len(unknown_trainloader)))
 
-    print('Finished Training')
+    # print('Finished Training')
     
     # Save Model
     # if not os.path.isdir('../model/test'):
