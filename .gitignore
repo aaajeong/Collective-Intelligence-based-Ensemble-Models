@@ -136,3 +136,9 @@ data
 paper_scripts
 meeting
 
+# Model
+model
+
+# Log
+runs
+training_log
