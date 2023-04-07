@@ -46,15 +46,11 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
         
         trainset = torchvision.datasets.CIFAR10(root='../data', train=True,
                                                 download=True, transform=transform_3ch) # transform을 이용해서 전처리 한다.
-        testset = torchvision.datasets.CIFAR10(root='../data', train=False,  # train=False로 설정
-                                            download=True, transform=transform_3ch)
         unknown = 'mnist'
         
     elif dataset == 'mnist':
         trainset = torchvision.datasets.MNIST(root='../data', train=True,
                                                 download=True, transform=transform_1ch)
-        testset = torchvision.datasets.MNIST(root='../data', train=False,
-                                            download=True, transform=transform_1ch)
         unknown = 'cifar10'
 
     else:
