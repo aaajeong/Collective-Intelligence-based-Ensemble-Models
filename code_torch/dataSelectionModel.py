@@ -7,14 +7,24 @@ import torch.nn.functional as F
 import torch.optim as optim
 import matplotlib.pyplot as plt
 import numpy as np
+import prepareData
+import Models
+import os
+from tqdm import tqdm
+from torch.utils.tensorboard import SummaryWriter
+ 
 
 # =========================================================== #
 # 모델 설명
 # 3채널(컬러)
 # =========================================================== #
 
-# def trainModel(dataset, n_class, selection, epochs, batch_size):
-def trainModel(dataset, batch_size):
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(f'{device} is available.')
+log_dir = "../log_dir"
+
+def trainModel(dataset, n_class, selection, epochs, batch_size):
+# def trainModel(dataset, batch_size):
     
     # 전처리 진행
     
@@ -56,13 +66,9 @@ def trainModel(dataset, batch_size):
     if unknown == 'mnist':
         unk_trainset = torchvision.datasets.MNIST(root='../data', train=True,
                                                 download=True, transform=transform_1ch)
-        unk_testset = torchvision.datasets.MNIST(root='../data', train=False,
-                                            download=True, transform=transform_1ch)
     else:   # unknown == 'cifar10'
         unk_trainset = torchvision.datasets.CIFAR10(root='../data', train=True,
                                                 download=True, transform=transform_3ch)
-        unk_testset = torchvision.datasets.CIFAR10(root='../data', train=False,
-                                            download=True, transform=transform_3ch)
     
     # Load data for train: Sub Unknown
     # Sub unknown: EMNIST, CIFAR100, Imagenet
@@ -70,43 +76,31 @@ def trainModel(dataset, batch_size):
     # 1. EMNIST
     emn_trainset = torchvision.datasets.EMNIST(root='../data', split = 'letters', train=True,
                                                 download=True, transform=transform_1ch)
-    emn_testset = torchvision.datasets.EMNIST(root='../data', split = 'letters', train=False,
-                                            download=True, transform=transform_1ch)
     
     # 2. CIFAR100
     cf100_trainset = torchvision.datasets.CIFAR100(root='../data', train=True,
                                                 download=True, transform=transform_3ch)
-    cf100_testset = torchvision.datasets.CIFAR100(root='../data', train=False,
-                                            download=True, transform=transform_3ch)
     
     # 3. Imagenet
     imgn_trainset = torchvision.datasets.CIFAR100(root='../data', train=True,
                                                 download=True, transform=transform_3ch)
-    imgn_testset = torchvision.datasets.CIFAR100(root='../data', train=False,
-                                            download=True, transform=transform_3ch)
+    
+    
+    # Preprocessing unknown data and concatenate them
+    unknown_list = prepareData.labelTounknown([unk_trainset, emn_trainset, cf100_trainset, imgn_trainset], n_class)
+    final_unknown = torch.utils.data.ConcatDataset(unknown_list)
+    
+    
+    # You can adjust the number of unknown data
+    num = 5000
+    
+    # Get final trainset
+    final_trainset = prepareData.unknownClassData('mnist', trainset, n_class, final_unknown, num, selection)
+    
     
     # DataLoader
-    # 1. Known dataset
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size, shuffle=True) 
-    testloader = torch.utils.data.DataLoader(testset, batch_size, shuffle=False)
+    final_trainloader = torch.utils.data.DataLoader(final_trainset, batch_size, shuffle=True)     
     
-    # # 2. Unknown Main dataset
-    # unk_trainloader = torch.utils.data.DataLoader(unk_trainset, batch_size, shuffle=True) 
-    # unk_testloader = torch.utils.data.DataLoader(unk_testset, batch_size, shuffle=False)
-    
-    # # 3. Unknown Sub dataset
-    # emn_trainloader = torch.utils.data.DataLoader(emn_trainset, batch_size, shuffle=True) 
-    # emn_testloader = torch.utils.data.DataLoader(emn_testset, batch_size, shuffle=False)
-    
-    # cf100_trainloader = torch.utils.data.DataLoader(cf100_trainset, batch_size, shuffle=True) 
-    # cf100_testloader = torch.utils.data.DataLoader(cf100_testset, batch_size, shuffle=False)
-    
-    # imgn_trainloader = torch.utils.data.DataLoader(imgn_trainset, batch_size, shuffle=True) 
-    # imgn_testloader = torch.utils.data.DataLoader(imgn_testset, batch_size, shuffle=False)
-    
-    
-    # Concatenate unknown datas
-    # Final Unknwon data = unknown + emnist + cifar100 + imagenet
     """
     <MNIST>
     images:  torch.Size([128, 1, 28, 28]) -> torch.Size([128, 3, 32, 32])
@@ -124,34 +118,54 @@ def trainModel(dataset, batch_size):
     images: torch.Size([128, 3, 32, 32])
     
     """
-    print('mnist train: ', len(trainset))
-    print('cifar10 train: ', len(unk_trainset))
-    print('emnist train: ', len(emn_trainset))
-    print('cifar100 train: ', len(cf100_trainset))
-    print('imagenet train: ', len(imgn_testset))
-    
-    print('mnist test: ', len(testset))
-    print('cifar10 test: ', len(unk_testset))
-    print('emnist test: ', len(emn_testset))
-    print('cifar100 test: ', len(cf100_testset))
-    print('imagenet test: ', len(imgn_testset))
-    
-    final_unknwon_train = torch.utils.data.ConcatDataset([unk_trainset, emn_trainset, 
-                                                    cf100_trainset, imgn_trainset])
-    final_unknwon_test = torch.utils.data.ConcatDataset([unk_testset, emn_testset, 
-                                                    cf100_testset, imgn_testset])
-    
-    final_unk_trainloader = torch.utils.data.DataLoader(final_unknwon_train, batch_size, shuffle=True)
-    final_unk_testloader = torch.utils.data.DataLoader(final_unknwon_test, batch_size, shuffle=False)
-    
-    
-    """
-    final_unknwon_train length:  274800
-    final_unknwon_test length:  50800
-    images:  torch.Size([128, 3, 32, 32])
-    lables:  torch.Size([128])
-    """
-    num = 5000
-    
 
-trainModel('mnist', 128)
+    # Train Model!
+    model = Models.Net3(n_class).to(device)
+    
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    
+    writer = SummaryWriter(log_dir)
+    
+    loss_ = [] # 그래프를 그리기 위한 loss 저장용 리스트 
+    n = len(final_trainloader) # 배치 개수
+
+    print('Start Training')
+    for epoch in range(epochs):  # 10번 학습을 진행한다.
+
+        running_loss = 0.0
+        for i, data in tqdm(enumerate(final_trainloader, 0)):
+
+            # gpu용 데이터와 모델이 있어야 함. (to(device)를 해줘야 한다.)
+            inputs, labels = data[0].to(device), data[1].to(device) # 배치 데이터 
+            
+            # 변화도(Gradient) 매개변수를 0으로.
+            optimizer.zero_grad()
+
+            outputs = model(inputs) # 예측값 산출 
+            loss = criterion(outputs, labels) # 손실함수 계산
+            
+            writer.add_scalar("Loss/train", loss, epoch)
+            
+            loss.backward() # 손실함수 기준으로 역전파 선언
+            optimizer.step() # 가중치 최적화
+
+            # print statistics
+            running_loss += loss.item()
+
+        loss_.append(running_loss / n)    
+        print('[%d] loss: %.3f' %(epoch + 1, running_loss / len(final_trainloader)))
+
+    print('Finished Training')
+    
+    writer.flush()
+    writer.close()
+   
+    # Save Model
+    if not os.path.isdir('../model/unknown_class'):
+        os.mkdir('../model/unknown_class')
+    torch.save(model, '../model/unknown_class/'+dataset+'_dataselection_'+selection+'.h5')
+
+# trainModel('mnist', 10, 'random', 10, 128)
+
+trainModel('mnist', 10, 'random', 300, 128)
