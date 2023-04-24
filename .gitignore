@@ -142,3 +142,5 @@ model
 # Log
 runs
 training_log
+log_dir
+
