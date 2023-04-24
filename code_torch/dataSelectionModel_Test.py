@@ -20,9 +20,10 @@ from tqdm import tqdm
 # =========================================================== #
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'{device} is available.')
-PATH = '../model/test/mnist_dataselection_random.h5'
+# model_PATH = '../model/unknown_class/mnist_dataselection_random.h5'
+model_PATH = '../model/single/mnist_epoch300.h5'
 
-def TestModel(dataset, batch_size):
+def TestModel(dataset, batch_size, n_class):
 
     
     # 전처리 진행
@@ -79,11 +80,16 @@ def TestModel(dataset, batch_size):
                                             download=True, transform=transform_3ch)
     
     
-    # Preprocessing data: concatenation
-    final_testset = torch.utils.data.ConcatDataset([testset, unk_testset, emn_testset, cf100_testset, imgn_testset])
+    # Preprocessing unknown data and concatenate them
+    unknown_list = prepareData.labelTounknown([unk_testset, emn_testset, cf100_testset, imgn_testset], n_class)
+    final_unknown = torch.utils.data.ConcatDataset(unknown_list)
     
+    
+     # Get final trainset
+    final_testset = torch.utils.data.ConcatDataset([testset, final_unknown])
+     
     # DataLoader
-    final_testloader = torch.utils.data.DataLoader(final_testset, batch_size, shuffle=True)
+    final_testloader = torch.utils.data.DataLoader(final_testset, batch_size, shuffle=False)
     
     # # 학습용 이미지를 무작위로 가져오기
     # dataiter = iter(final_testloader)
@@ -94,7 +100,7 @@ def TestModel(dataset, batch_size):
     # Test Model!
     classes = ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'unknown')
     
-    model = torch.load(PATH).to(device)
+    model = torch.load(model_PATH).to(device)
 
     correct = 0
     total = 0
@@ -128,6 +134,7 @@ def TestModel(dataset, batch_size):
     # if not os.path.isdir('../results/unknown_class'):
     #     os.mkdir('../results/unknown_class')
     # torch.save(model, '../model/unknown_class/'+dataset+'_dataselection_'+selection+'.h5')
-    
-TestModel('mnist', 128)
+
+# dataset, batch_size, n_class
+TestModel('mnist', 128, 10)
 #%%

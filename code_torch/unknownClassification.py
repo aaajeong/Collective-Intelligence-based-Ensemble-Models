@@ -11,6 +11,7 @@ import prepareData
 import Models
 import os
 from tqdm import tqdm
+from torch.utils.data.dataset import random_split
 from torch.utils.tensorboard import SummaryWriter
  
 
@@ -21,7 +22,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'{device} is available.')
-log_dir = "../log_dir/unknown_class"
+log_dir = "../log_dir"
 
 def trainModel(dataset, n_class, selection, epochs, batch_size):
 # def trainModel(dataset, batch_size):
@@ -46,11 +47,13 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
         
         trainset = torchvision.datasets.CIFAR10(root='../data', train=True,
                                                 download=True, transform=transform_3ch) # transform을 이용해서 전처리 한다.
-        unknown = 'mnist'
+        unknown = 'imagenet'
         
     elif dataset == 'mnist':
         trainset = torchvision.datasets.MNIST(root='../data', train=True,
                                                 download=True, transform=transform_1ch)
+        trainset, _ = random_split(trainset, [50000, len(trainset)-50000])
+        
         unknown = 'cifar10'
 
     else:
@@ -59,31 +62,16 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
     
     
     # Load data for train: Main Unknown
-    if unknown == 'mnist':
-        unk_trainset = torchvision.datasets.MNIST(root='../data', train=True,
-                                                download=True, transform=transform_1ch)
-    else:   # unknown == 'cifar10'
+    if unknown == 'cifar10':
         unk_trainset = torchvision.datasets.CIFAR10(root='../data', train=True,
                                                 download=True, transform=transform_3ch)
-    
-    # Load data for train: Sub Unknown
-    # Sub unknown: EMNIST, CIFAR100, Imagenet
-    
-    # 1. EMNIST
-    emn_trainset = torchvision.datasets.EMNIST(root='../data', split = 'letters', train=True,
-                                                download=True, transform=transform_1ch)
-    
-    # 2. CIFAR100
-    cf100_trainset = torchvision.datasets.CIFAR100(root='../data', train=True,
-                                                download=True, transform=transform_3ch)
-    
-    # 3. Imagenet
-    imgn_trainset = torchvision.datasets.ImageNet(root='../data', train=True,
+    else:   # unknown == 'imagenet'
+        unk_trainset = torchvision.datasets.ImageNet(root='../data', train=True,
                                                 download=True, transform=transform_3ch)
     
     
     # Preprocessing unknown data and concatenate them
-    unknown_list = prepareData.labelTounknown([unk_trainset, emn_trainset, cf100_trainset, imgn_trainset], n_class)
+    unknown_list = prepareData.labelTounknown([unk_trainset], n_class)
     final_unknown = torch.utils.data.ConcatDataset(unknown_list)
     
     
@@ -91,7 +79,7 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
     num = 5000
     
     # Get final trainset
-    final_trainset = prepareData.unknownClassData('mnist', trainset, n_class, final_unknown, num, selection)
+    final_trainset = prepareData.unknownClassData(dataset, trainset, n_class, final_unknown, num, selection)
     
     
     # DataLoader
@@ -104,12 +92,6 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
     <CIFAR10>
     images: torch.Size([128, 3, 32, 32])
     
-    <CIFAR100>
-    images: torch.Size([128, 3, 32, 32])
-    
-    <EMNIST>
-    images: torch.Size([128, 1, 28, 28]) -> torch.Size([128, 3, 32, 32])
-    
     <Imagenet>
     images: torch.Size([128, 3, 32, 32])
     
@@ -117,6 +99,7 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
 
     # Train Model!
     model = Models.Net(n_class).to(device)
+    # model = Models.CNN(n_class).to(device)
     
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -160,9 +143,8 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
     # Save Model
     if not os.path.isdir('../model/unknown_class'):
         os.mkdir('../model/unknown_class')
-    torch.save(model, '../model/unknown_class/'+dataset+'_dataselection_'+selection+'.h5')
+    torch.save(model, '../model/unknown_class/'+dataset+'_unknownclsfi_'+selection+'.h5')
 
-# dataset, n_class, selection, epochs, batch_size
 trainModel('mnist', 10, 'random', 300, 128)
 
 # tensorboard --logdir ./logs
