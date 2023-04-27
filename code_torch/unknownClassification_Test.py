@@ -14,6 +14,7 @@ import utils
 import os
 from tqdm import tqdm
 from torch.utils.data.dataset import random_split
+from sklearn.metrics import classification_report
 
 # =========================================================== #
 # 모델 설명
@@ -21,8 +22,8 @@ from torch.utils.data.dataset import random_split
 # =========================================================== #
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'{device} is available.')
-# model_PATH = '../model/unknown_class/mnist_dataselection_random.h5'
-model_PATH = '../model/single/mnist_epoch300.h5'
+model_PATH = '../model/unknown_class/mnist_unknownclsfi_random_5000.h5'
+# model_PATH = '../model/single/mnist_epoch300.h5'
 
 def TestModel(dataset, batch_size, n_class):
 
@@ -43,7 +44,7 @@ def TestModel(dataset, batch_size, n_class):
     # Load data for Test
     mnistset = torchvision.datasets.MNIST(root='../data', train=False,
                                             download=True, transform=transform_1ch)
-    mnistset = random_split(mnistset, [5000, len(mnistset)-5000])
+    mnistset, _ = random_split(mnistset, [5000, len(mnistset)-5000])
     cifar10set = torchvision.datasets.CIFAR10(root='../data', train=False,
                                             download=True, transform=transform_3ch)
         
@@ -52,63 +53,63 @@ def TestModel(dataset, batch_size, n_class):
     
     # Preprocessing unknown data and concatenate them
     if dataset == 'mnist':
+        mainset = mnistset
         unknown_list = prepareData.labelTounknown([cifar10set, emnistset], n_class)
+        unknownset = torch.utils.data.ConcatDataset(unknown_list)
     elif dataset == 'cifar10':
+        mainset = cifar10set
         unknown_list = prepareData.labelTounknown([mnistset, emnistset], n_class)
-    final_unknown = torch.utils.data.ConcatDataset(unknown_list)
-    
-    
-     # Get final trainset
-    final_testset = torch.utils.data.ConcatDataset([testset, final_unknown])
+        unknownset = torch.utils.data.ConcatDataset(unknown_list)
+    else:
+        print('존재하지 않는 데이터')
+        
+    # Get final trainset
+    final_unknown, _ = random_split(unknownset, [5000, len(unknownset)-5000])
+    final_testset = torch.utils.data.ConcatDataset([mainset, final_unknown])
      
     # DataLoader
     final_testloader = torch.utils.data.DataLoader(final_testset, batch_size, shuffle=False)
+    print(final_testloader)
+
+#     # Test Model!
+#     model = torch.load(model_PATH).to(device)
+
+#     correct = 0
+#     total = 0
+#     model.eval()
+#     pred = []
+#     true = []
+#     with torch.no_grad():
+#         for data in tqdm(final_testloader):
+#             inputs, labels = data[0].to(device), data[1].to(device)
+#             # 신경망에 이미지를 통과시켜 출력을 계산
+#             outputs = model(inputs)
+#             # 가장 높은 값(energy)를 갖는 분류(class)를 정답으로 선택
+#             _, predicted = torch.max(outputs, 1)
+#             total += labels.size(0)
+#             correct += (predicted == labels).sum().item()
+#             pred.append(predicted)
+#             true.append(labels)
+
+#     print(f'Accuracy of the network on the test images: {100 * correct // total} %')
+#     print(classification_report(true, pred))
+
+#     #  # 이미지 보여주기
+#     # utils.imshow(torchvision.utils.make_grid(images))
     
-    # # 학습용 이미지를 무작위로 가져오기
-    # dataiter = iter(final_testloader)
-    # images, labels = next(dataiter)
-    # images = images.to(device)
-    # labels = labels.to(device)
+#     # # # 정답(label) 출력
+#     # for i in range(4):
+#     #     print(labels[i], end = ' ')
+#     # # print(' '.join(f'{classes[labels[j]]:5s}' for j in range(5))) # unknown 이미지는 레이블이 class 외에 속하기 때문에 인덱스 에러 발생할 수 있으므로 주의.
+#     # print()
+#     # # # 예측 값 출력
+#     # print('Predicted: ', ' '.join(f'{classes[predicted[j]]:5s}' for j in range(5)))
 
-    # Test Model!
-    classes = ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'unknown')
-    
-    model = torch.load(model_PATH).to(device)
+#     # Save Results
+#     # if not os.path.isdir('../results/unknown_class'):
+#     #     os.mkdir('../results/unknown_class')
+#     # torch.save(model, '../model/unknown_class/'+dataset+'_dataselection_'+selection+'.h5')
 
-    correct = 0
-    total = 0
-    model.eval()
-    
-    # 학습 중이 아니므로, 출력에 대한 변화도를 계산할 필요가 없다.
-    with torch.no_grad():
-        for data in tqdm(final_testloader):
-            inputs, labels = data[0].to(device), data[1].to(device)
-            # 신경망에 이미지를 통과시켜 출력을 계산
-            outputs = model(inputs)
-            # 가장 높은 값(energy)를 갖는 분류(class)를 정답으로 선택
-            _, predicted = torch.max(outputs, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-
-    print(f'Accuracy of the network on the test images: {100 * correct // total} %')
-
-
-    #  # 이미지 보여주기
-    # utils.imshow(torchvision.utils.make_grid(images))
-    
-    # # # 정답(label) 출력
-    # for i in range(4):
-    #     print(labels[i], end = ' ')
-    # # print(' '.join(f'{classes[labels[j]]:5s}' for j in range(5))) # unknown 이미지는 레이블이 class 외에 속하기 때문에 인덱스 에러 발생할 수 있으므로 주의.
-    # print()
-    # # # 예측 값 출력
-    # print('Predicted: ', ' '.join(f'{classes[predicted[j]]:5s}' for j in range(5)))
-
-    # Save Results
-    # if not os.path.isdir('../results/unknown_class'):
-    #     os.mkdir('../results/unknown_class')
-    # torch.save(model, '../model/unknown_class/'+dataset+'_dataselection_'+selection+'.h5')
-
-# dataset, batch_size, n_class
+# # dataset, batch_size, n_class
 TestModel('mnist', 128, 10)
 #%%
