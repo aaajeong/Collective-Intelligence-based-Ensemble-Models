@@ -18,37 +18,23 @@ def getModel(dataset):
 # checkData(dataset,'Random',[i for i in idx_rand])
 
 def checkData(dataset, selection, data_list):
-    """
-    dataset: mnist or cifar10
-    selection: unknown 선택 기준 방법
-    data_list: unknown 데이터를 랜덤 비복원 추출 한 인덱스 리스트
-    """
-    n_data = {'mnist':0, 'emnist':0, 'cifar10':0, 'cifar100':0, 'imagenet':0}
+    n_data = {'mnist':0, 'emnist':0, 'cifar10':0, 'imagenet':0}
     
     n_data[dataset] = 50000
     if dataset == 'mnist':
         n_data[dataset] += 10000
 
-    # for d in data_list:
-    #     if d < 25000:
-    #         if dataset == 'mnist':
-    #             n_data['cifar10'] += 1
-    #         elif dataset == 'cifar10':
-    #             n_data['mnist'] += 1
-    #     elif 25000 <= d < 50000:
-    #         n_data['emnist'] += 1
-    #     elif d >= 50000:
-    #         n_data['imagenet'] += 1
-    
     for d in data_list:
-        if d < 50000:
+        if d < 25000:
             if dataset == 'mnist':
                 n_data['cifar10'] += 1
             elif dataset == 'cifar10':
                 n_data['mnist'] += 1
+        elif 25000 <= d < 50000:
+            n_data['emnist'] += 1
         elif d >= 50000:
-            n_data['cifar100'] += 1
-            
+            n_data['imagenet'] += 1
+    
     '''
     if dataset == 'mnist':
         n_data[dataset] = 60000
@@ -77,13 +63,10 @@ def checkData(dataset, selection, data_list):
     #         n_data['imagenet'] += 1
 
     import os
-    if not os.path.isdir('../checkData'):
-        os.mkdir('../checkData')
-        
-    if not os.path.isfile('../checkData/'+dataset+'_'+selection+'_checkdata.txt'):
-        f = open(r'../checkData/'+dataset+'_'+selection+'_checkdata.txt','w')
+    if not os.path.isfile('./checkData/'+dataset+'_'+selection+'_checkdata.txt'):
+        f = open(r'./checkData/'+dataset+'_'+selection+'_checkdata.txt','w')
     else:
-        f = open(r'../checkData/'+dataset+'_'+selection+'_checkdata.txt','a')
+        f = open(r'./checkData/'+dataset+'_'+selection+'_checkdata.txt','a')
     f.write('====='+str(len(data_list))+'=====\n')
     for k, v in n_data.items():
         f.write(k+': '+str(v)+'\n')
