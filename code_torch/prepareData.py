@@ -23,7 +23,7 @@ def labelTounknown(data_list, n_class):
             unknown.targets[j] = n_class
     return data_list
 
-def unknownClassData(main_dataset, trainset, n_class, unknown, num, selection):
+def unknownClassData(main_dataset, trainset, n_class, unknown, num, selection, batch_size):
     """
     main_dataset: mnist or cifar10
     trainst: main_dataset에 해당하는 학습 데이터셋
@@ -38,7 +38,7 @@ def unknownClassData(main_dataset, trainset, n_class, unknown, num, selection):
     원래 trainset에 unknown 데이터를 붙여야 함. (인풋값, 레이블 값 둘다.)
     """
     # <class 'torch.utils.data.dataset.Subset'>
-    unknown = choiceUnknown(main_dataset, unknown, num, selection, n_class)  
+    unknown = choiceUnknown(main_dataset, unknown, num, selection, n_class, batch_size)  
     
     # 최종 known + unknown 합치기
     final_trainset = torch.utils.data.ConcatDataset([trainset, unknown])
@@ -46,23 +46,23 @@ def unknownClassData(main_dataset, trainset, n_class, unknown, num, selection):
     return final_trainset
 
 
-def choiceUnknown(main_dataset, unknown, num, selection, n_class):
+def choiceUnknown(main_dataset, unknown, num, selection, n_class, batch_size):
     """
     main_dataset: mnist or cifar10
     unknown: unknown 데이터
     num:unknown dataset 개수 설정한 값
     selection: unknown 데이터 선별 기준
+    batch_size: unknown 데이터 batch size
     """
-    # n_class = 10
     
     if selection == 'random':
         unknown = selectData.choiceRandom(num,unknown)
     elif selection == 'uniform':
         b = 20 # 이거 몇으로 설정할지 고민하자!
-        unknown = selectData.choiceUniform(main_dataset,num,b,unknown,n_class)
+        unknown = selectData.choiceUniform(main_dataset,num,b,unknown,n_class, batch_size)
     elif selection == 'topk':
-        unknown = selectData.choiceTopk(main_dataset,num,unknown,n_class)
+        unknown = selectData.choiceTopk(main_dataset,num,unknown,n_class, batch_size)
     elif selection == 'rtopk':
-        unknown = selectData.choiceReverseTopk(main_dataset,num,unknown,n_class)
+        unknown = selectData.choiceReverseTopk(main_dataset,num,unknown,n_class, batch_size)
         
     return unknown

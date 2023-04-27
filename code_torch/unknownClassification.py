@@ -22,7 +22,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'{device} is available.')
-log_dir = "../log_dir"
+log_dir = "../log_dir/unknown_class"
 
 def trainModel(dataset, n_class, selection, epochs, batch_size):
 # def trainModel(dataset, batch_size):
@@ -54,7 +54,7 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
                                                 download=True, transform=transform_1ch)
         trainset, _ = random_split(trainset, [50000, len(trainset)-50000])
         
-        unknown = 'cifar10'
+        unknown = 'emnist'
 
     else:
         print('존재하지 않는 데이터')
@@ -62,12 +62,12 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
     
     
     # Load data for train: Main Unknown
-    if unknown == 'cifar10':
-        unk_trainset = torchvision.datasets.CIFAR10(root='../data', train=True,
-                                                download=True, transform=transform_3ch)
+    if unknown == 'emnist':
+        unk_trainset = torchvision.datasets.EMNIST(root='../data', split = 'letters', train=True,
+                                                   download=True, transform=transform_1ch)
     else:   # unknown == 'imagenet'
-        unk_trainset = torchvision.datasets.ImageNet(root='../data', train=True,
-                                                download=True, transform=transform_3ch)
+        unk_trainset = torchvision.datasets.ImageNet(root='../data/imagenet', split = 'train',
+                                                     download=None, transform=transform_3ch)
     
     
     # Preprocessing unknown data and concatenate them
@@ -79,7 +79,7 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
     num = 5000
     
     # Get final trainset
-    final_trainset = prepareData.unknownClassData(dataset, trainset, n_class, final_unknown, num, selection)
+    final_trainset = prepareData.unknownClassData(dataset, trainset, n_class, final_unknown, num, selection, batch_size)
     
     
     # DataLoader
@@ -98,8 +98,8 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
     """
 
     # Train Model!
-    model = Models.Net(n_class).to(device)
-    # model = Models.CNN(n_class).to(device)
+    # model = Models.Net(n_class).to(device)
+    model = Models.CNN(n_class).to(device)
     
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -143,8 +143,8 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
     # Save Model
     if not os.path.isdir('../model/unknown_class'):
         os.mkdir('../model/unknown_class')
-    torch.save(model, '../model/unknown_class/'+dataset+'_unknownclsfi_'+selection+'.h5')
+    torch.save(model, '../model/unknown_class/'+dataset+'_unknownclsfi_'+selection+'_'+str(num)+'.h5')
 
-trainModel('mnist', 10, 'random', 300, 128)
-
+# trainModel('mnist', 10, 'random', 300, 128)
+trainModel('cifar10', 10, 'random', 300, 128)
 # tensorboard --logdir ./logs

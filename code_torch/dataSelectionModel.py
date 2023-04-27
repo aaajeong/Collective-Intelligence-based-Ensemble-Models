@@ -91,7 +91,7 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
     num = 5000
     
     # Get final trainset
-    final_trainset = prepareData.unknownClassData('mnist', trainset, n_class, final_unknown, num, selection)
+    final_trainset = prepareData.unknownClassData('mnist', trainset, n_class, final_unknown, num, selection, batch_size)
     
     
     # DataLoader

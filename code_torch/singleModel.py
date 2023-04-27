@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 import torchvision.transforms as transforms
+from torch.utils.data.dataset import random_split
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -31,13 +32,14 @@ def trainSingleModel(dataset, epochs, batch_size, n_class):
     if dataset == 'mnist':
         trainset = torchvision.datasets.MNIST(root='../data', train=True,
                                                 download=True, transform=transform_1ch)
-        testset = torchvision.datasets.MNIST(root='../data', train=False,
-                                            download=True, transform=transform_1ch)
+        trainset, _ = random_split(trainset, [50000, len(trainset)-50000])
+        # testset = torchvision.datasets.MNIST(root='../data', train=False,
+        #                                     download=True, transform=transform_1ch)
     elif dataset == 'cifar10':
         trainset = torchvision.datasets.CIFAR10(root='../data', train=True,
                                                 download=True, transform=transform_3ch)
-        testset = torchvision.datasets.CIFAR10(root='../data', train=False,
-                                            download=True, transform=transform_3ch)
+        # testset = torchvision.datasets.CIFAR10(root='../data', train=False,
+        #                                     download=True, transform=transform_3ch)
     else:
         print('존재하지 않는 데이터')
     

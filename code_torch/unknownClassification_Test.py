@@ -13,6 +13,7 @@ import Models
 import utils
 import os
 from tqdm import tqdm
+from torch.utils.data.dataset import random_split
 
 # =========================================================== #
 # 모델 설명
@@ -25,7 +26,6 @@ model_PATH = '../model/single/mnist_epoch300.h5'
 
 def TestModel(dataset, batch_size, n_class):
 
-    
     # 전처리 진행
     # For 1 channel
     transform_1ch = transforms.Compose(
@@ -39,49 +39,22 @@ def TestModel(dataset, batch_size, n_class):
         [transforms.ToTensor(), # 텐서로 바꿔주고([-1,1])
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]) # 3개의 채널에 대한 평균, 표준편차를 넣어준다.(정규화)(값은 최적화 값은 아님)
     
+    # Test dataset: MNIST(5,000개), EMNIST, CIFAR-10 데이터 중 5,000개를 무작위로 추출 -> 총 10,000개
+    # Load data for Test
+    mnistset = torchvision.datasets.MNIST(root='../data', train=False,
+                                            download=True, transform=transform_1ch)
+    mnistset = random_split(mnistset, [5000, len(mnistset)-5000])
+    cifar10set = torchvision.datasets.CIFAR10(root='../data', train=False,
+                                            download=True, transform=transform_3ch)
         
-    # Load data for train: Known
-    if dataset == 'cifar10':
-        testset = torchvision.datasets.CIFAR10(root='../data', train=False,  # train=False로 설정
-                                            download=True, transform=transform_3ch)
-        unknown = 'mnist'
-        
-    elif dataset == 'mnist':
-        testset = torchvision.datasets.MNIST(root='../data', train=False,
-                                            download=True, transform=transform_1ch)
-        unknown = 'cifar10'
-
-    else:
-        print('존재하지 않는 데이터')
-        return 0
-    
-    
-    # Load data for train: Main Unknown
-    if unknown == 'mnist':
-        unk_testset = torchvision.datasets.MNIST(root='../data', train=False,
-                                            download=True, transform=transform_1ch)
-    else:   # unknown == 'cifar10'
-        unk_testset = torchvision.datasets.CIFAR10(root='../data', train=False,
-                                            download=True, transform=transform_3ch)
-    
-    # Load data for train: Sub Unknown
-    # Sub unknown: EMNIST, CIFAR100, Imagenet
-    
-    # 1. EMNIST
-    emn_testset = torchvision.datasets.EMNIST(root='../data', split = 'letters', train=False,
-                                            download=True, transform=transform_1ch)
-    
-    # 2. CIFAR100
-    cf100_testset = torchvision.datasets.CIFAR100(root='../data', train=False,
-                                            download=True, transform=transform_3ch)
-    
-    # 3. Imagenet
-    imgn_testset = torchvision.datasets.CIFAR100(root='../data', train=False,
-                                            download=True, transform=transform_3ch)
-    
+    emnistset = torchvision.datasets.EMNIST(root='../data', split = 'letters', train=False,
+                                                download=True, transform=transform_1ch)
     
     # Preprocessing unknown data and concatenate them
-    unknown_list = prepareData.labelTounknown([unk_testset, emn_testset, cf100_testset, imgn_testset], n_class)
+    if dataset == 'mnist':
+        unknown_list = prepareData.labelTounknown([cifar10set, emnistset], n_class)
+    elif dataset == 'cifar10':
+        unknown_list = prepareData.labelTounknown([mnistset, emnistset], n_class)
     final_unknown = torch.utils.data.ConcatDataset(unknown_list)
     
     
