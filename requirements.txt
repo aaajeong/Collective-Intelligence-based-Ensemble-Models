@@ -4,6 +4,7 @@ torchaudio == 0.8.1
 torchsummary == 1.5.1
 torchvision == 0.9.1+cu10
 tqdm
+tensorboard
 # numpy 1.24.2
 
 # desktop

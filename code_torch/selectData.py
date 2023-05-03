@@ -10,7 +10,7 @@ from tqdm import tqdm
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def getModel(main_dataset):
-    model_path = '../model/single'+ main_dataset + '_epoch300.h5'
+    model_path = '../model/single/'+ main_dataset + '_epoch300.h5'
     model = torch.load(model_path)
     return model
 
@@ -67,6 +67,7 @@ def choiceTopk(dataset, k, unknown, n_class, batch_size):
     unknown_loader = torch.utils.data.DataLoader(unknown, batch_size, shuffle=True)
     model = getModel(dataset).to(device)
     model.eval()
+    print("choice TopK ...ing")
     with torch.no_grad():
         for data in tqdm(unknown_loader):
             inputs = data[0].to(device)
