@@ -144,3 +144,5 @@ runs
 training_log
 log_dir
 
+# Source code
+../code_torch/imagenet.py
