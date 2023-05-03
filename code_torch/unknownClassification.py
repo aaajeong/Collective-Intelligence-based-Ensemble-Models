@@ -22,9 +22,9 @@ from torch.utils.tensorboard import SummaryWriter
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'{device} is available.')
-log_dir = "../log_dir/unknown_class"
+log_dir = "../log_dir/unknown_class/mnist/topk"
 
-def trainModel(dataset, n_class, selection, epochs, batch_size):
+def trainModel(dataset, n_class, selection, epochs, batch_size, num):
 # def trainModel(dataset, batch_size):
     
     # 전처리 진행
@@ -76,7 +76,7 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
     
     
     # You can adjust the number of unknown data
-    num = 5000
+    # num = 5000
     
     # Get final trainset
     final_trainset = prepareData.unknownClassData(dataset, trainset, n_class, final_unknown, num, selection, batch_size)
@@ -145,6 +145,6 @@ def trainModel(dataset, n_class, selection, epochs, batch_size):
         os.mkdir('../model/unknown_class')
     torch.save(model, '../model/unknown_class/'+dataset+'_unknownclsfi_'+selection+'_'+str(num)+'.h5')
 
-# trainModel('mnist', 10, 'random', 300, 128)
-trainModel('cifar10', 10, 'random', 300, 128)
+trainModel('mnist', 10, 'topk', 300, 128, 5000)
+# trainModel('cifar10', 10, 'random', 300, 128)
 # tensorboard --logdir ./logs

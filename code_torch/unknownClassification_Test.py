@@ -19,10 +19,10 @@ from sklearn.metrics import classification_report
 # 모델 설명
 # 3채널(컬러)
 # =========================================================== #
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 print(f'{device} is available.')
-# model_PATH = '../model/unknown_class/mnist_unknownclsfi_random_5000.h5'
-model_PATH = '../model/single/cifar10_epoch300.h5'
+model_PATH = '../model/unknown_class/mnist_unknownclsfi_random_10000.h5'
+# model_PATH = '../model/single/cifar10_epoch300.h5'
 
 def TestModel(dataset, batch_size, n_class):
 
@@ -94,18 +94,19 @@ def TestModel(dataset, batch_size, n_class):
     
     # Save Results
     selection = 'random'
-    num = '5000'
-    m = 'single'
+    num = '10000'
+    m = 'unknown_class'
     if not os.path.exists('../results/'+m):
         os.makedirs('../results/'+m)
     f = open('../results/'+m+'/'+dataset+'_'+selection+'_'+num+'.txt', 'w')
-    f.write(f'Accuracy of the network on the test images: {100 * correct // total} %')
+    f.write(f'Accuracy of the network on the test images: {100*correct // total:.3f} %')
     f.write('\n\n')
     f.write(classification_report(true, pred))
     f.close()
 
 # dataset, batch_size, n_class
-TestModel('cifar10', 128, 9)
+TestModel('mnist', 128, 10)
+
 # MNIST (클래스 10개)
 # single: TestModel('mnist', 128, 9)
 # unknown: TestModel('mnist', 128, 10)
