@@ -21,7 +21,8 @@ from sklearn.metrics import classification_report
 # =========================================================== #
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 print(f'{device} is available.')
-model_PATH = '../model/unknown_class/mnist_unknownclsfi_random_10000.h5'
+# model_PATH = '../model/unknown_class/mnist_unknownclsfi_random_5000.h5'
+# model_PATH = '../model/unknown_class/cifar10_unknownclsfi_random_5000.h5'
 # model_PATH = '../model/single/cifar10_epoch300.h5'
 
 def TestModel(dataset, batch_size, n_class):
@@ -36,8 +37,9 @@ def TestModel(dataset, batch_size, n_class):
     
     # For 3 channel
     transform_3ch = transforms.Compose(
-        [transforms.ToTensor(), # 텐서로 바꿔주고([-1,1])
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]) # 3개의 채널에 대한 평균, 표준편차를 넣어준다.(정규화)(값은 최적화 값은 아님)
+        [transforms.Resize((32, 32)),
+         transforms.ToTensor(),
+         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
     
     # Test dataset: MNIST(5,000개), EMNIST, CIFAR-10 데이터 중 5,000개를 무작위로 추출 -> 총 10,000개
     # Load data for Test
@@ -48,7 +50,8 @@ def TestModel(dataset, batch_size, n_class):
         
     emnistset = torchvision.datasets.EMNIST(root='../data', split = 'letters', train=False,
                                                 download=True, transform=transform_1ch)
-    
+    imgnetset = torchvision.datasets.ImageNet(root='../data/imagenet', split = 'train',
+                                                     download=None, transform=transform_3ch)
     # Preprocessing unknown data and concatenate them
     if dataset == 'mnist':
         mnistset, _ = random_split(mnistset, [5000, len(mnistset)-5000])
@@ -94,7 +97,7 @@ def TestModel(dataset, batch_size, n_class):
     
     # Save Results
     selection = 'random'
-    num = '10000'
+    num = '5000'
     m = 'unknown_class'
     if not os.path.exists('../results/'+m):
         os.makedirs('../results/'+m)
@@ -105,7 +108,8 @@ def TestModel(dataset, batch_size, n_class):
     f.close()
 
 # dataset, batch_size, n_class
-TestModel('mnist', 128, 10)
+# TestModel('mnist', 128, 10)
+TestModel('cifar10', 128, 10)
 
 # MNIST (클래스 10개)
 # single: TestModel('mnist', 128, 9)
