@@ -13,6 +13,7 @@ import os
 from tqdm import tqdm
 from torch.utils.data.dataset import random_split
 from torch.utils.tensorboard import SummaryWriter
+import customDataset
  
 
 # =========================================================== #
@@ -22,7 +23,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'{device} is available.')
-log_dir = "../log_dir/unknown_class/mnist/topk"
+log_dir = "../log_dir/unknown_class/cifar/random"
 
 def trainModel(dataset, n_class, selection, epochs, batch_size, num):
 # def trainModel(dataset, batch_size):
@@ -36,10 +37,10 @@ def trainModel(dataset, n_class, selection, epochs, batch_size, num):
          transforms.Lambda(lambda x: x.repeat(3, 1, 1)),    # 1개의 채널을 3개의 채널로 바꿔준다.
          transforms.Normalize((0.5), (0.5))])   # 3개의 채널에 대한 평균, 표준편차를 넣어준다.(정규화)(값은 최적화 값은 아님)
     
-    # For 3 channel
     transform_3ch = transforms.Compose(
-        [transforms.ToTensor(), # 텐서로 바꿔주고([-1,1])
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]) # 3개의 채널에 대한 평균, 표준편차를 넣어준다.(정규화)(값은 최적화 값은 아님)
+        [transforms.Resize((32, 32)),
+         transforms.ToTensor(),
+         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
     
         
     # Load data for train: Known
@@ -68,6 +69,8 @@ def trainModel(dataset, n_class, selection, epochs, batch_size, num):
     else:   # unknown == 'imagenet'
         unk_trainset = torchvision.datasets.ImageNet(root='../data/imagenet', split = 'train',
                                                      download=None, transform=transform_3ch)
+        unk_trainset = customDataset.custom_subset(unk_trainset, 50000)
+        # unk_trainset, _ = random_split(unk_trainset, [50000, len(unk_trainset)-50000])
     
     
     # Preprocessing unknown data and concatenate them
@@ -145,6 +148,6 @@ def trainModel(dataset, n_class, selection, epochs, batch_size, num):
         os.mkdir('../model/unknown_class')
     torch.save(model, '../model/unknown_class/'+dataset+'_unknownclsfi_'+selection+'_'+str(num)+'.h5')
 
-trainModel('mnist', 10, 'topk', 300, 128, 5000)
-# trainModel('cifar10', 10, 'random', 300, 128)
+# trainModel('mnist', 10, 'topk', 300, 128, 5000)
+trainModel('cifar10', 10, 'random', 300, 128, 5000)
 # tensorboard --logdir ./logs
