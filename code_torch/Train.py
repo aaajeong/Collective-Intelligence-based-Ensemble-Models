@@ -12,6 +12,7 @@ nohup python Train.py --n_class 9 --n 0 &
 
 2. unknown class 학습
 mnist: python Train.py --n_class 10 --n 1
+cifar10: python Train.py --dataset cifar10 -n_class 10 --n 1
 """
 
 if __name__ == '__main__':
@@ -41,7 +42,7 @@ if __name__ == '__main__':
             os.mkdir('../model/single')   
         torch.save(model, '../model/single/'+args.dataset+'_epoch'+str(args.epochs)+'.h5')
     elif args.n == 1:
-        for num in [500, 3000, 4000, 6000, 7000, 8000, 9000, 10000]:
+        for num in [100, 200, 400, 500, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000]:
             print('======== num: '+str(num)+'========')
             model = unknownClassification.trainModel(args.dataset, args.n_class, args.selection, args.epochs, args.batch_size, num)
         
