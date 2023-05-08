@@ -23,7 +23,7 @@ import customDataset
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'{device} is available.')
-log_dir = "../log_dir/unknown_class/cifar/random"
+log_dir = "../log_dir/unknown_class/cifar10/random"
 
 def trainModel(dataset, n_class, selection, epochs, batch_size, num):
 # def trainModel(dataset, batch_size):
@@ -149,5 +149,5 @@ def trainModel(dataset, n_class, selection, epochs, batch_size, num):
     torch.save(model, '../model/unknown_class/'+dataset+'_unknownclsfi_'+selection+'_'+str(num)+'.h5')
 
 # trainModel('mnist', 10, 'topk', 300, 128, 5000)
-trainModel('cifar10', 10, 'random', 300, 128, 5000)
+# trainModel('cifar10', 10, 'random', 300, 128, 5000)
 # tensorboard --logdir ./logs
