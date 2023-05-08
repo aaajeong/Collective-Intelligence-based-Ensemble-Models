@@ -19,10 +19,10 @@ from sklearn.metrics import classification_report
 # 모델 설명
 # 3채널(컬러)
 # =========================================================== #
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'{device} is available.')
 # model_PATH = '../model/unknown_class/mnist_unknownclsfi_random_5000.h5'
-# model_PATH = '../model/unknown_class/cifar10_unknownclsfi_random_5000.h5'
+model_PATH = '../model/unknown_class/cifar10_unknownclsfi_random_10000.h5'
 # model_PATH = '../model/single/cifar10_epoch300.h5'
 
 def TestModel(dataset, batch_size, n_class):
@@ -97,7 +97,7 @@ def TestModel(dataset, batch_size, n_class):
     
     # Save Results
     selection = 'random'
-    num = '5000'
+    num = '10000'
     m = 'unknown_class'
     if not os.path.exists('../results/'+m):
         os.makedirs('../results/'+m)
