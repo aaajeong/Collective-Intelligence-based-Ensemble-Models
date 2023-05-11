@@ -3,11 +3,12 @@ import numpy as np
 import torch
 import torchvision.models as models
 from torch.utils.data import RandomSampler
+from torch.utils.data import Subset
 from torch.utils.data.dataset import random_split
 from torch.utils.data import TensorDataset
 from tqdm import tqdm
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 def getModel(main_dataset):
     model_path = '../model/single/'+ main_dataset + '_epoch300.h5'
@@ -32,12 +33,17 @@ def getEntropyBasedUncertainty(output, n_class):
     n_class: unknown 클래스 번호
     """
     uncertainty = []
+    print('Getting Entropy based uncertainty in unknown data ...')
     for d in output:
         tmp = 0
         # d[0]~d[n_class-1] 까지의 확률값에 대한 엔트로피를 구해 d에 대한 uncertainty 구한다.
         # log: base가 n_class
         for i in range(n_class):
-            tmp = tmp + d[i]*math.log(d[i],n_class) if d[i] != 0 else tmp
+            # tmp = tmp + d[i]*math.log(d[i],n_class) if d[i] != 0 else tmp
+            if d[i] > 0:
+                tmp = tmp + d[i]*math.log(d[i],n_class)
+            else:
+                tmp = tmp + d[i]*math.log(-d[i],n_class)
         uncertainty.append(-1*tmp)
     return uncertainty
 
@@ -73,13 +79,20 @@ def choiceTopk(dataset, k, unknown, n_class, batch_size):
             inputs = data[0].to(device)
             outputs = model(inputs)
             pred_unknown.append(outputs)
-    # 예측값 불확실성 측정
+    
+    pred_unknown = torch.stack(pred_unknown, 0)
+    # pred_unknown.shape:  torch.Size([975, 128, 10]) -> torch.Size([124800, 10])
+    pred_unknown = pred_unknown.view(len(pred_unknown) * batch_size, -1)
+    
+    # unknown data의 예측값 불확실성 측정
     uncertainty = getEntropyBasedUncertainty(pred_unknown, n_class)
+    
     uncertainty = [[i,u] for i, u in enumerate(uncertainty)]
     uncertainty = sorted(uncertainty, key = lambda x: -x[1])    # 불확실성 큰 순서대로 정렬
     
-    chosen_data = np.array([unknown[i] for i, u in uncertainty[:k]])
-    chosen_data = TensorDataset(chosen_data)
+    # 해당되는 index의 unknown data를 가져온다.
+    indices = [i for i, u in uncertainty[:k]]
+    chosen_data = Subset(unknown, indices)
     return chosen_data
     
 def choiceReverseTopk(dataset, k, unknown, n_class, batch_size):
@@ -93,18 +106,27 @@ def choiceReverseTopk(dataset, k, unknown, n_class, batch_size):
     unknown_loader = torch.utils.data.DataLoader(unknown, batch_size, shuffle=True)
     model = getModel(dataset).to(device)
     model.eval()
+    print("choice TopK ...ing")
     with torch.no_grad():
         for data in tqdm(unknown_loader):
             inputs = data[0].to(device)
             outputs = model(inputs)
             pred_unknown.append(outputs)
-    # 예측값 불확실성 측정
+    
+    pred_unknown = torch.stack(pred_unknown, 0)
+    # pred_unknown.shape:  torch.Size([975, 128, 10]) -> torch.Size([124800, 10])
+    pred_unknown = pred_unknown.view(len(pred_unknown) * batch_size, -1)
+    
+    # unknown data의 예측값 불확실성 측정
     uncertainty = getEntropyBasedUncertainty(pred_unknown, n_class)
+    
     uncertainty = [[i,u] for i, u in enumerate(uncertainty)]
     uncertainty = sorted(uncertainty, key = lambda x: x[1])    # 불확실성 작은 순서대로 정렬
     
-    chosen_data = np.array([unknown[i] for i, u in uncertainty[:k]])
-    chosen_data = TensorDataset(chosen_data)
+    # 해당되는 index의 unknown data를 가져온다.
+    indices = [i for i, u in uncertainty[:k]]
+    chosen_data = Subset(unknown, indices)
+    
     return chosen_data
 
 def getHistogrambin(dataset, b, unknown, n_class, batch_size):

@@ -23,7 +23,7 @@ import customDataset
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'{device} is available.')
-log_dir = "../log_dir/unknown_class/cifar10/random"
+log_dir = "../log_dir/unknown_class/mnist/topk"
 
 def trainModel(dataset, n_class, selection, epochs, batch_size, num):
 # def trainModel(dataset, batch_size):

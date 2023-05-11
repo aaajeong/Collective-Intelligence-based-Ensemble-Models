@@ -85,13 +85,3 @@ class custom_subset(Dataset):
 
     def __len__(self):
         return len(self.dataset)
-
-
-# transform_3ch = transforms.Compose(
-#         [transforms.ToTensor(),
-#         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
-# unk_trainset = torchvision.datasets.ImageNet(root='../data/imagenet', split = 'train',
-#                                                      download=None, transform=transform_3ch)
-
-# subsetdatset = custom_subset(unk_trainset, 50000)
