@@ -19,13 +19,10 @@ from sklearn.metrics import classification_report
 # 모델 설명
 # 3채널(컬러)
 # =========================================================== #
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 print(f'{device} is available.')
-# model_PATH = '../model/unknown_class/mnist_unknownclsfi_random_5000.h5'
-model_PATH = '../model/unknown_class/cifar10_unknownclsfi_random_10000.h5'
-# model_PATH = '../model/single/cifar10_epoch300.h5'
 
-def TestModel(dataset, batch_size, n_class):
+def TestModel(dataset, batch_size, n_class, selection, num):
 
     # 전처리 진행
     # For 1 channel
@@ -56,11 +53,12 @@ def TestModel(dataset, batch_size, n_class):
     if dataset == 'mnist':
         mnistset, _ = random_split(mnistset, [5000, len(mnistset)-5000])
         mainset = mnistset
-        unknown_list = prepareData.labelTounknown([cifar10set, emnistset], n_class)
+        # unknown_list = prepareData.labelTounknown([cifar10set, emnistset], n_class) # 1번째에 실험한 버전
+        unknown_list = prepareData.labelTounknown([emnistset], n_class) # 2번째에 실험한 버전
         unknownset = torch.utils.data.ConcatDataset(unknown_list)
     elif dataset == 'cifar10':
         mainset = cifar10set
-        unknown_list = prepareData.labelTounknown([mnistset, emnistset], n_class)
+        unknown_list = prepareData.labelTounknown([mnistset, emnistset], n_class)   # 1번째에 실험한 버전
         unknownset = torch.utils.data.ConcatDataset(unknown_list)
     else:
         print('존재하지 않는 데이터')
@@ -73,6 +71,7 @@ def TestModel(dataset, batch_size, n_class):
     final_testloader = torch.utils.data.DataLoader(final_testset, batch_size, shuffle=False)
 
     # Test Model!
+    model_PATH = '../model/unknown_class/'+dataset+'_unknownclsfi_'+selection+'_'+str(num)+'.h5'
     model = torch.load(model_PATH).to(device)
 
     correct = 0
@@ -96,20 +95,14 @@ def TestModel(dataset, batch_size, n_class):
             true = np.concatenate((true, labels.cpu()), axis = 0)
     
     # Save Results
-    selection = 'random'
-    num = '10000'
     m = 'unknown_class'
     if not os.path.exists('../results/'+m):
         os.makedirs('../results/'+m)
     f = open('../results/'+m+'/'+dataset+'_'+selection+'_'+num+'.txt', 'w')
     f.write(f'Accuracy of the network on the test images: {100*correct // total:.3f} %')
     f.write('\n\n')
-    f.write(classification_report(true, pred))
+    f.write(classification_report(true, pred, digits = 4))
     f.close()
-
-# dataset, batch_size, n_class
-# TestModel('mnist', 128, 10)
-TestModel('cifar10', 128, 10)
 
 # MNIST (클래스 10개)
 # single: TestModel('mnist', 128, 9)
