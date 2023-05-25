@@ -12,7 +12,7 @@ nohup python Train.py --n_class 9 --n 0 &
 
 2. unknown class 학습
 mnist: python Train.py --n_class 10 --n 1
-cifar10: python Train.py --dataset cifar10 -n_class 10 --n 1
+cifar10: python Train.py --dataset cifar10 --n_class 10 --n 1
 """
 
 if __name__ == '__main__':

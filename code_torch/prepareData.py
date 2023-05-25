@@ -17,11 +17,14 @@ def labelTounknown(data_list, n_class):
         n_class: unknown 클래스 번호
     """
     for i in range(len(data_list)):
+        final_list = []
         unknown = data_list[i]
         
         for j in range(len(unknown)):
             unknown.targets[j] = n_class
-    return data_list
+        final_list.append(unknown)
+    return final_list
+    # return data_list
 
 def unknownClassData(main_dataset, trainset, n_class, unknown, num, selection, batch_size):
     """

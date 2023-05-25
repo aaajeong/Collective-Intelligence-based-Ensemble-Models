@@ -1,7 +1,6 @@
 import argparse
 import os
 import torch
-import singleModel
 import unknownClassification_Test
 
 """
@@ -13,9 +12,9 @@ mnist: python Test.py --n_class 10
 or 
        python Test.py --n_class 10 --selection topk
          
-cifar10: python Test.py --dataset cifar10 -n_class 10
+cifar10: python Test.py --dataset cifar10 --n_class 10
 or
-         python Test.py --dataset cifar10 -n_class 10 --selection topk
+         python Test.py --dataset cifar10 --n_class 10 --selection topk
 """
 
 if __name__ == '__main__':
@@ -29,7 +28,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     # GPU Setting
-    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f'{device} is available.')
 
 

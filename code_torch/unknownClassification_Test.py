@@ -19,7 +19,7 @@ from sklearn.metrics import classification_report
 # 모델 설명
 # 3채널(컬러)
 # =========================================================== #
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'{device} is available.')
 
 def TestModel(dataset, batch_size, n_class, selection, num):
@@ -38,6 +38,10 @@ def TestModel(dataset, batch_size, n_class, selection, num):
          transforms.ToTensor(),
          transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
     
+     # For Imagenet
+    target_transform = transforms.Lambda(lambda y: n_class if y >= 0 else n_class)
+    
+    
     # Test dataset: MNIST(5,000개), EMNIST, CIFAR-10 데이터 중 5,000개를 무작위로 추출 -> 총 10,000개
     # Load data for Test
     mnistset = torchvision.datasets.MNIST(root='../data', train=False,
@@ -47,8 +51,8 @@ def TestModel(dataset, batch_size, n_class, selection, num):
         
     emnistset = torchvision.datasets.EMNIST(root='../data', split = 'letters', train=False,
                                                 download=True, transform=transform_1ch)
-    imgnetset = torchvision.datasets.ImageNet(root='../data/imagenet', split = 'train',
-                                                     download=None, transform=transform_3ch)
+    imgnetset = torchvision.datasets.ImageNet(root='../data/imagenet', split = 'val',
+                                                     download=None, transform=transform_3ch, target_transform = target_transform)
     # Preprocessing unknown data and concatenate them
     if dataset == 'mnist':
         mnistset, _ = random_split(mnistset, [5000, len(mnistset)-5000])
@@ -58,13 +62,14 @@ def TestModel(dataset, batch_size, n_class, selection, num):
         unknownset = torch.utils.data.ConcatDataset(unknown_list)
     elif dataset == 'cifar10':
         mainset = cifar10set
-        unknown_list = prepareData.labelTounknown([mnistset, emnistset], n_class)   # 1번째에 실험한 버전
+        # unknown_list = prepareData.labelTounknown([mnistset, emnistset], n_class)   # 1번째에 실험한 버전
+        unknown_list = prepareData.labelTounknown([imgnetset], n_class)   # 2번째에 실험한 버전
         unknownset = torch.utils.data.ConcatDataset(unknown_list)
     else:
         print('존재하지 않는 데이터')
         
     # Get final trainset
-    final_unknown, _ = random_split(unknownset, [5000, len(unknownset)-5000])
+    final_unknown, _ = random_split(unknownset, [10000, len(unknownset)-10000])
     final_testset = torch.utils.data.ConcatDataset([mainset, final_unknown])
     
     # DataLoader
@@ -98,7 +103,7 @@ def TestModel(dataset, batch_size, n_class, selection, num):
     m = 'unknown_class'
     if not os.path.exists('../results/'+m):
         os.makedirs('../results/'+m)
-    f = open('../results/'+m+'/'+dataset+'_'+selection+'_'+num+'.txt', 'w')
+    f = open('../results/'+m+'/'+dataset+'_'+selection+'_'+str(num)+'.txt', 'w')
     f.write(f'Accuracy of the network on the test images: {100*correct // total:.3f} %')
     f.write('\n\n')
     f.write(classification_report(true, pred, digits = 4))
@@ -111,4 +116,6 @@ def TestModel(dataset, batch_size, n_class, selection, num):
 #CIFAR10 (클래스 10개)
 # single: TestModel('cifar10', 128, 9)
 # unknown: TestModel('cifar10', 128, 10)
+# TestModel('cifar10', 128, 10, 'random', 500)
+
 #%%

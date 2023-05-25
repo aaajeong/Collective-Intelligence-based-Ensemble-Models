@@ -65,7 +65,7 @@ class custom_unk_wholeset(Dataset):
 
 
 class custom_subset(Dataset):
-    r"""
+    """
     Subset of a dataset at specified indices.
 
     Arguments:
@@ -85,3 +85,22 @@ class custom_subset(Dataset):
 
     def __len__(self):
         return len(self.dataset)
+    
+class ImgnetCustomDataset(Dataset):
+    """
+    
+    Imagenet Custom Dataset for unknown test 
+        
+    """
+    def __init__(self, images, labels, n_class):
+        self.images = images
+        self.labels = labels
+        self.n_class = n_class
+        
+    def __getitem__(self, idx):
+        label = self.n_class
+        image = self.images[idx]
+        return image, label
+    
+    def __len__(self):
+        return len(self.labels)

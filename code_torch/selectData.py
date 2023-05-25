@@ -8,7 +8,7 @@ from torch.utils.data.dataset import random_split
 from torch.utils.data import TensorDataset
 from tqdm import tqdm
 
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def getModel(main_dataset):
     model_path = '../model/single/'+ main_dataset + '_epoch300.h5'

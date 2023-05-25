@@ -11,11 +11,13 @@ import numpy as np
 import prepareData
 import Models
 import os
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'{device} is available.')
 
-def trainModel(n_class, selection, epochs, batch_size):
+def trainModel(selection, epochs, batch_size):
     # 전처리 진행
     
     transform_1ch = transforms.Compose(
@@ -29,35 +31,38 @@ def trainModel(n_class, selection, epochs, batch_size):
          transforms.ToTensor(),
          transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
+    target_transform = transforms.Lambda(lambda y: 10 if y >= 0 else 10)
+    PATH = '/media/nyongja/b87a7903-5f54-464d-87c4-e2a95ec0fb95/ahjeong'
+    trainset = torchvision.datasets.ImageNet(PATH, split='train', download=None, transform=transform_3ch)
 
-    trainset = torchvision.datasets.MNIST(root='../data', train=True,
-                                                download=True, transform=transform_1ch)
-    testset = torchvision.datasets.MNIST(root='../data', train=False,
-                                        download=True, transform=transform_1ch)
-
-    unk_trainset = torchvision.datasets.EMNIST(root='../data', split = 'letters', train=True,
-                                                   download=True, transform=transform_1ch)
+    # testset = torchvision.datasets.ImageNet('../data/imagenet', split='val', download=None, transform=transform_3ch, target_transform = target_transform) # label이 n_class 인 것
+    
+    # testset = torchvision.datasets.ImageNet('../data/imagenet', split='val', download=None, transform=transform_3ch)    # label이 원래 값인 것
+     
+    
+    # unk_trainset = torchvision.datasets.EMNIST(root='../data', split = 'letters', train=True,
+    #                                                download=True, transform=transform_1ch)
     
     # Unown class
-    unknown_list = prepareData.labelTounknown([unk_trainset], n_class)
-    final_unknown = torch.utils.data.ConcatDataset(unknown_list)
+    # unknown_list = prepareData.labelTounknown([unk_trainset], n_class)
+    # final_unknown = torch.utils.data.ConcatDataset(unknown_list)
 
 
-    num = 5000
+    # num = 5000
 
-    final_trainset = prepareData.unknownClassData('mnist', trainset, n_class, final_unknown, num, selection, batch_size)
+    # final_trainset = prepareData.unknownClassData('mnist', trainset, n_class, final_unknown, num, selection, batch_size)
     
     # DataLoader
-    final_trainloader = torch.utils.data.DataLoader(final_trainset, batch_size, shuffle=True) 
+    # final_trainloader = torch.utils.data.DataLoader(trainset, batch_size, shuffle=True) 
     
     # 제대로 불러왔는지 확인
-    dataiter = iter(final_trainloader)
-    inputs, labels = next(dataiter)
-    print(inputs)
-    print(labels)
+    # dataiter = iter(final_trainloader)
+    # inputs, labels = next(dataiter)
+    # print(inputs)
+    # print(labels)
     
     # Train Model
-    # model = Models.CNN(n_class).to(device)
+    # model = Models.CNN2().to(device)
     
     # criterion = nn.CrossEntropyLoss()
     # optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -90,8 +95,10 @@ def trainModel(n_class, selection, epochs, batch_size):
     # print('Finished Training')
     
     # # Save Model
+    # dataset= 'imgnet'
     # if not os.path.isdir('../model/test'):
     #     os.mkdir('../model/test')
     # torch.save(model, '../model/test/'+dataset+'_dataselection_'+selection+'.h5')
     
-trainModel(10, 'rtopk', 10, 128)
+# trainModel(10, 'random', 10, 128)
+trainModel('random', 10, 128)

@@ -23,7 +23,8 @@ import customDataset
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'{device} is available.')
-log_dir = "../log_dir/unknown_class/mnist/topk"
+# log_dir = "../log_dir/unknown_class/mnist/topk"
+log_dir = "../log_dir/unknown_class/cifar10/topk"
 
 def trainModel(dataset, n_class, selection, epochs, batch_size, num):
 # def trainModel(dataset, batch_size):
@@ -42,6 +43,8 @@ def trainModel(dataset, n_class, selection, epochs, batch_size, num):
          transforms.ToTensor(),
          transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
     
+    # For Imagenet
+    target_transform = transforms.Lambda(lambda y: n_class if y >= 0 else n_class)
         
     # Load data for train: Known
     if dataset == 'cifar10':
@@ -68,7 +71,7 @@ def trainModel(dataset, n_class, selection, epochs, batch_size, num):
                                                    download=True, transform=transform_1ch)
     else:   # unknown == 'imagenet'
         unk_trainset = torchvision.datasets.ImageNet(root='../data/imagenet', split = 'train',
-                                                     download=None, transform=transform_3ch)
+                                                     download=None, transform=transform_3ch, target_transform = target_transform)
         unk_trainset = customDataset.custom_subset(unk_trainset, 50000)
         # unk_trainset, _ = random_split(unk_trainset, [50000, len(unk_trainset)-50000])
     
