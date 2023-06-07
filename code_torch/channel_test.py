@@ -32,12 +32,13 @@ def trainModel(selection, epochs, batch_size):
          transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
     target_transform = transforms.Lambda(lambda y: 10 if y >= 0 else 10)
-    PATH = '/media/nyongja/b87a7903-5f54-464d-87c4-e2a95ec0fb95/ahjeong'
+    PATH = '../data/imagenet'
     trainset = torchvision.datasets.ImageNet(PATH, split='train', download=None, transform=transform_3ch)
-
+    # trainset = torchvision.datasets.ImageFolder(root = PATH+'/train', transform=transform_3ch)
     # testset = torchvision.datasets.ImageNet('../data/imagenet', split='val', download=None, transform=transform_3ch, target_transform = target_transform) # label이 n_class 인 것
     
-    # testset = torchvision.datasets.ImageNet('../data/imagenet', split='val', download=None, transform=transform_3ch)    # label이 원래 값인 것
+    # testset = torchvision.datasets.ImageNet(PATH, split='val', download=None, transform=transform_3ch)    # label이 원래 값인 것
+    testset = torchvision.datasets.ImageFolder(root = PATH+'/val', transform=transform_3ch)
      
     
     # unk_trainset = torchvision.datasets.EMNIST(root='../data', split = 'letters', train=True,
@@ -53,7 +54,7 @@ def trainModel(selection, epochs, batch_size):
     # final_trainset = prepareData.unknownClassData('mnist', trainset, n_class, final_unknown, num, selection, batch_size)
     
     # DataLoader
-    # final_trainloader = torch.utils.data.DataLoader(trainset, batch_size, shuffle=True) 
+    final_trainloader = torch.utils.data.DataLoader(trainset, batch_size, shuffle=True, num_workers = 6) 
     
     # 제대로 불러왔는지 확인
     # dataiter = iter(final_trainloader)
@@ -62,43 +63,43 @@ def trainModel(selection, epochs, batch_size):
     # print(labels)
     
     # Train Model
-    # model = Models.CNN2().to(device)
+    model = Models.CNN2().to(device)
     
-    # criterion = nn.CrossEntropyLoss()
-    # optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     
-    # loss_ = [] # 그래프를 그리기 위한 loss 저장용 리스트 
-    # n = len(final_trainloader) # 배치 개수
+    loss_ = [] # 그래프를 그리기 위한 loss 저장용 리스트 
+    n = len(final_trainloader) # 배치 개수
 
-    # for epoch in range(epochs):  # 10번 학습을 진행한다.
-
-    #     running_loss = 0.0
-    #     for i, data in enumerate(final_trainloader, 0):
-
-    #         # gpu용 데이터와 모델이 있어야 함. (to(device)를 해줘야 한다.)
-    #         inputs, labels = data[0].to(device), data[1].to(device) # 배치 데이터 
+    for epoch in range(epochs):  # 10번 학습을 진행한다.
+        print('epoch: ', epoch)
+        running_loss = 0.0
+        for i, data in enumerate(final_trainloader, 0):
             
-    #         # 변화도(Gradient) 매개변수를 0으로.
-    #         optimizer.zero_grad()
+            # gpu용 데이터와 모델이 있어야 함. (to(device)를 해줘야 한다.)
+            inputs, labels = data[0].to(device), data[1].to(device) # 배치 데이터 
+            
+            # 변화도(Gradient) 매개변수를 0으로.
+            optimizer.zero_grad()
 
-    #         outputs = model(inputs) # 예측값 산출 
-    #         loss = criterion(outputs, labels) # 손실함수 계산
-    #         loss.backward() # 손실함수 기준으로 역전파 선언
-    #         optimizer.step() # 가중치 최적화
+            outputs = model(inputs) # 예측값 산출 
+            loss = criterion(outputs, labels) # 손실함수 계산
+            loss.backward() # 손실함수 기준으로 역전파 선언
+            optimizer.step() # 가중치 최적화
 
-    #         # print statistics
-    #         running_loss += loss.item()
+            # print statistics
+            running_loss += loss.item()
 
-    #     loss_.append(running_loss / n)    
-    #     print('[%d] loss: %.3f' %(epoch + 1, running_loss / len(final_trainloader)))
+        loss_.append(running_loss / n)    
+        print('[%d] loss: %.3f' %(epoch + 1, running_loss / len(final_trainloader)))
 
-    # print('Finished Training')
+    print('Finished Training')
     
-    # # Save Model
-    # dataset= 'imgnet'
-    # if not os.path.isdir('../model/test'):
-    #     os.mkdir('../model/test')
-    # torch.save(model, '../model/test/'+dataset+'_dataselection_'+selection+'.h5')
+    # Save Model
+    dataset= 'imgnet'
+    if not os.path.isdir('../model/test'):
+        os.mkdir('../model/test')
+    torch.save(model, '../model/test/'+dataset+'_dataselection_'+selection+'.h5')
     
 # trainModel(10, 'random', 10, 128)
 trainModel('random', 10, 128)
